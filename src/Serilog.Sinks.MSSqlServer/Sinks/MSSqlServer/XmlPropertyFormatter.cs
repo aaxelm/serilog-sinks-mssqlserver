@@ -192,7 +192,7 @@ namespace Serilog.Sinks.MSSqlServer
 #if NET45
             if (!char.IsLetter(validName[0]) || validName.StartsWith("xml", true, CultureInfo.CurrentCulture))
 #endif
-#if NETSTANDARD1_6
+#if NETCORE
             if (!char.IsLetter(validName[0]) || validName.StartsWith("xml", StringComparison.CurrentCultureIgnoreCase))
 #endif
             {

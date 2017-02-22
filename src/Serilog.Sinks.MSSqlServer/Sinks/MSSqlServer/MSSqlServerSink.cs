@@ -18,7 +18,7 @@ using System.Data.SqlClient;
 #if NET45
 using System.Data;
 #endif
-#if NETSTANDARD1_6
+#if NETCORE
 using Serilog.Models;
 #endif
 using System.Linq;
@@ -156,10 +156,10 @@ namespace Serilog.Sinks.MSSqlServer
                         }
 
                         await copy.WriteToServerAsync(_eventsTable).ConfigureAwait(false);
-                    } 
+                    }
 #endif
 
-#if NETSTANDARD1_6
+#if NETCORE
                     var parameterDictionary = new Dictionary<string, object>();
                     int i = 1;
                     var commandString = new StringBuilder();
@@ -313,7 +313,7 @@ namespace Serilog.Sinks.MSSqlServer
 #if NET45
                             row[_columnOptions.MessageTemplate.ColumnName ?? "MessageTemplate"] = logEvent.MessageTemplate;
 #endif
-#if NETSTANDARD1_6
+#if NETCORE
                             row[_columnOptions.MessageTemplate.ColumnName ?? "MessageTemplate"] = logEvent.MessageTemplate.ToString();
 #endif
                             break;

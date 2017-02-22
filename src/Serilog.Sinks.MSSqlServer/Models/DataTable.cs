@@ -1,4 +1,4 @@
-﻿#if NETSTANDARD1_6
+﻿#if NETCORE
 namespace Serilog.Models
 {
     using System;

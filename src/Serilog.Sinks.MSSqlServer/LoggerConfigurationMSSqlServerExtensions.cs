@@ -9,7 +9,7 @@ using Serilog.Debugging;
 #if NET45
 using System.Configuration;
 #endif
-#if NETSTANDARD1_6
+#if NETCORE
 using Serilog.Models;
 #endif
 
