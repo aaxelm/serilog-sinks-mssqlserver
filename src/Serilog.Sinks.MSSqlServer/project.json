@@ -1,8 +1,8 @@
 {
-  "version": "4.2.0-*",
-  "description": "A Serilog sink that writes events to Microsoft SQL Server",
+  "version": "1.1.0-*",
+  "description": "A Serilog sink that writes events to Microsoft SQL Server that works also with .NET Core",
   "authors": [
-    "Michiel van Oudheusden",
+    "Alexandru Munteanu",
     "Serilog Contributors"
   ],
   "packOptions": {
@@ -12,7 +12,8 @@
     "tags": [
       "serilog",
       "sinks",
-      "mssqlserver"
+      "mssqlserver",
+      "netcore"
     ]
   },
   "dependencies": {
@@ -32,9 +33,16 @@
         "System.Xml.Linq": "",
         "System.Configuration": ""
       }
+    },
+    "netstandard1.2": {
+      "buildOptions": {
+        "define": [ "NETCORE" ]
+      },
+      "imports": "dnxcore50",
+      "dependencies": {
+        "NETStandard.Library": "1.6.0",
+        "System.Data.SqlClient": "4.1.0"
+      }
     }
-  },
-  "runtimes": {
-    "win": {}
   }
 }

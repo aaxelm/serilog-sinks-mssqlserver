@@ -1,7 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+#if NET45
 using System.Data;
+#endif
+#if NETCORE
+using Serilog.Models;
+#endif
 
 namespace Serilog.Sinks.MSSqlServer
 {

@@ -5,8 +5,13 @@ using System.Data;
 using Serilog.Configuration;
 using Serilog.Events;
 using Serilog.Sinks.MSSqlServer;
-using System.Configuration;
 using Serilog.Debugging;
+#if NET45
+using System.Configuration;
+#endif
+#if NETCORE
+using Serilog.Models;
+#endif
 
 // Copyright 2014 Serilog Contributors
 // 
@@ -38,6 +43,7 @@ namespace Serilog
         /// <param name="loggerConfiguration">The logger configuration.</param>
         /// <param name="connectionString">The connection string to the database where to store the events.</param>
         /// <param name="tableName">Name of the table to store the events in.</param>
+        /// <param name="schemaName">Name of the schema for the table to store the data in. The default is 'dbo'.</param>
         /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
         /// <param name="batchPostingLimit">The maximum number of events to post in a single batch.</param>
         /// <param name="period">The time to wait between checking for event batches.</param>
@@ -55,13 +61,15 @@ namespace Serilog
             TimeSpan? period = null,
             IFormatProvider formatProvider = null,
             bool autoCreateSqlTable = false,
-            ColumnOptions columnOptions = null
+            ColumnOptions columnOptions = null,
+            string schemaName = "dbo"
             )
         {
             if (loggerConfiguration == null) throw new ArgumentNullException("loggerConfiguration");
 
             var defaultedPeriod = period ?? MSSqlServerSink.DefaultPeriod;
 
+#if NET45
             MSSqlServerConfigurationSection serviceConfigSection =
                ConfigurationManager.GetSection("MSSqlServerSettingsSection") as MSSqlServerConfigurationSection;
 
@@ -76,6 +84,7 @@ namespace Serilog
             }
 
             connectionString = GetConnectionString(connectionString);
+#endif
 
             return loggerConfiguration.Sink(
                 new MSSqlServerSink(
@@ -85,11 +94,13 @@ namespace Serilog
                     defaultedPeriod,
                     formatProvider,
                     autoCreateSqlTable,
-                    columnOptions
+                    columnOptions,
+                    schemaName
                     ),
                 restrictedToMinimumLevel);
         }
 
+#if NET45
         /// <summary>
         /// Examine if supplied connection string is a reference to an item in the "ConnectionStrings" section of web.config
         /// If it is, return the ConnectionStrings item, if not, return string as supplied.
@@ -189,5 +200,6 @@ namespace Serilog
                 columnOptions.AdditionalDataColumns.Add(column);
             }
         }
+#endif
     }
 }

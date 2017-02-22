@@ -14,8 +14,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Data.SqlClient;
+#if NET45
+using System.Data;
+#endif
+#if NETCORE
+using Serilog.Models;
+#endif
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -48,6 +53,7 @@ namespace Serilog.Sinks.MSSqlServer
         readonly DataTable _eventsTable;
         readonly IFormatProvider _formatProvider;
         readonly string _tableName;
+        readonly string _schemaName;
         private readonly ColumnOptions _columnOptions;
 
         private readonly HashSet<string> _additionalDataColumnNames;
@@ -60,6 +66,7 @@ namespace Serilog.Sinks.MSSqlServer
         /// </summary>
         /// <param name="connectionString">Connection string to access the database.</param>
         /// <param name="tableName">Name of the table to store the data in.</param>
+        /// <param name="schemaName">Name of the schema for the table to store the data in. The default is 'dbo'.</param>
         /// <param name="batchPostingLimit">The maximum number of events to post in a single batch.</param>
         /// <param name="period">The time to wait between checking for event batches.</param>
         /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
@@ -72,7 +79,8 @@ namespace Serilog.Sinks.MSSqlServer
             TimeSpan period,
             IFormatProvider formatProvider,
             bool autoCreateSqlTable = false,
-            ColumnOptions columnOptions = null
+            ColumnOptions columnOptions = null,
+            string schemaName = "dbo"
             )
             : base(batchPostingLimit, period)
         {
@@ -84,6 +92,7 @@ namespace Serilog.Sinks.MSSqlServer
 
             _connectionString = connectionString;
             _tableName = tableName;
+            _schemaName = schemaName;
             _formatProvider = formatProvider;
             _columnOptions = columnOptions ?? new ColumnOptions();
             if (_columnOptions.AdditionalDataColumns != null)
@@ -99,7 +108,7 @@ namespace Serilog.Sinks.MSSqlServer
             {
                 try
                 {
-                    SqlTableCreator tableCreator = new SqlTableCreator(connectionString);
+                    SqlTableCreator tableCreator = new SqlTableCreator(connectionString, _schemaName);
                     tableCreator.CreateTable(_eventsTable);
                 }
                 catch (Exception ex)
@@ -126,15 +135,19 @@ namespace Serilog.Sinks.MSSqlServer
 
             try
             {
+                var destinationTableName = string.Format("[{0}].[{1}]", _schemaName, _tableName);
+
                 using (var cn = new SqlConnection(_connectionString))
                 {
                     await cn.OpenAsync().ConfigureAwait(false);
-                    using (var copy = _columnOptions.DisableTriggers
+
+#if NET45
+                   using (var copy = _columnOptions.DisableTriggers
                             ? new SqlBulkCopy(cn)
                             : new SqlBulkCopy(cn, SqlBulkCopyOptions.CheckConstraints | SqlBulkCopyOptions.FireTriggers, null)
                     )
                     {
-                        copy.DestinationTableName = _tableName;
+                        copy.DestinationTableName = destinationTableName;
                         foreach (var column in _eventsTable.Columns)
                         {
                             var columnName = ((DataColumn)column).ColumnName;
@@ -144,6 +157,44 @@ namespace Serilog.Sinks.MSSqlServer
 
                         await copy.WriteToServerAsync(_eventsTable).ConfigureAwait(false);
                     }
+#endif
+
+#if NETCORE
+                    var parameterDictionary = new Dictionary<string, object>();
+                    int i = 1;
+                    var commandString = new StringBuilder();
+                    var insertedColumns = _eventsTable.Columns.Where(x => !x.AutoIncrement).ToList();
+
+                    var cols = string.Join(", ", insertedColumns.Select(x => $"[{x.ColumnName}]"));
+                    commandString.Append($"INSERT INTO {destinationTableName} ({cols}) VALUES ");
+
+                    foreach (var eventsTableRow in _eventsTable.Rows)
+                    {
+                        var rows = string.Join(", ", insertedColumns.Select(x => $"@{x.ColumnName}_{i}"));
+                        commandString.Append($"({rows}),");
+                        foreach (var eventsTableColumn in insertedColumns)
+                        {
+                            parameterDictionary[$"@{eventsTableColumn.ColumnName}_{i}"] = Convert.ChangeType(eventsTableRow[eventsTableColumn.ColumnName], eventsTableColumn.DataType);
+                        }
+                        i++;
+                    }
+
+                    using (var command = new SqlCommand(commandString.ToString().TrimEnd(','), cn))
+                    {
+                        foreach (var key in parameterDictionary.Keys)
+                        {
+                            if (parameterDictionary[key] == null)
+                            {
+                                command.Parameters.AddWithValue(key, DBNull.Value);
+                            }
+                            else
+                            {
+                                command.Parameters.AddWithValue(key, parameterDictionary[key]);
+                            }
+                        }
+                        await command.ExecuteNonQueryAsync();
+                    }
+#endif
                 }
             }
             catch (Exception ex)
@@ -259,7 +310,12 @@ namespace Serilog.Sinks.MSSqlServer
                             row[_columnOptions.Message.ColumnName ?? "Message"] = logEvent.RenderMessage(_formatProvider);
                             break;
                         case StandardColumn.MessageTemplate:
+#if NET45
                             row[_columnOptions.MessageTemplate.ColumnName ?? "MessageTemplate"] = logEvent.MessageTemplate;
+#endif
+#if NETCORE
+                            row[_columnOptions.MessageTemplate.ColumnName ?? "MessageTemplate"] = logEvent.MessageTemplate.ToString();
+#endif
                             break;
                         case StandardColumn.Level:
                             row[_columnOptions.Level.ColumnName ?? "Level"] = logEvent.Level;
@@ -289,7 +345,9 @@ namespace Serilog.Sinks.MSSqlServer
                 _eventsTable.Rows.Add(row);
             }
 
+#if NET45
             _eventsTable.AcceptChanges();
+#endif
         }
 
         private string ConvertPropertiesToXmlStructure(IEnumerable<KeyValuePair<string, LogEventPropertyValue>> properties)
@@ -350,6 +408,7 @@ namespace Serilog.Sinks.MSSqlServer
         {
             foreach (var property in properties)
             {
+
                 if (!row.Table.Columns.Contains(property.Key))
                     continue;
 
