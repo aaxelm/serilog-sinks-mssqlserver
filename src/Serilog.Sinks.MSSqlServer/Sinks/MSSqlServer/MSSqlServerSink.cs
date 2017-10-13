@@ -50,7 +50,7 @@ namespace Serilog.Sinks.MSSqlServer
 
         readonly string _connectionString;
 
-        readonly DataTable _eventsTable;
+        private DataTable _eventsTable;
         readonly IFormatProvider _formatProvider;
         readonly string _tableName;
         readonly string _schemaName;
@@ -465,11 +465,15 @@ namespace Serilog.Sinks.MSSqlServer
         /// </summary>
         /// <param name="disposing"></param>
         protected override void Dispose(bool disposing)
-        {
-            if (_eventsTable != null)
-                _eventsTable.Dispose();
-
+        {            
             base.Dispose(disposing);
+
+            if (_eventsTable != null)
+            {
+                _eventsTable.Dispose();
+                _eventsTable = null;
+            }
+
         }
     }
 }
