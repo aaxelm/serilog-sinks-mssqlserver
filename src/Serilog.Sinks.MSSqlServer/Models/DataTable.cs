@@ -56,6 +56,9 @@ namespace Serilog.Models
         /// <returns></returns>
         public DataRow NewRow()
         {
+            var test = new DataRow();
+            
+
             return new DataRow()
             {
                 Table = this

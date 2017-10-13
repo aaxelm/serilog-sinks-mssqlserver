@@ -16,7 +16,7 @@ namespace Serilog.Models
         /// <param name="key"></param>
         public DataColumn this[string key]
         {
-            get { return this.FirstOrDefault(x => x.ColumnName.Equals(key, StringComparison.Ordinal)); }
+            get { return this.FirstOrDefault(x => x.ColumnName.Equals(key, StringComparison.OrdinalIgnoreCase)); }
         }
 
         /// <summary>
@@ -26,7 +26,7 @@ namespace Serilog.Models
         /// <returns></returns>
         public bool Contains(string key)
         {
-            return this.Any(x => x.ColumnName.Equals(key, StringComparison.Ordinal));
+            return this.Any(x => x.ColumnName.Equals(key, StringComparison.OrdinalIgnoreCase));
         }
     }
 }

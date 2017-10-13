@@ -174,7 +174,15 @@ namespace Serilog.Sinks.MSSqlServer
                         commandString.Append($"({rows}),");
                         foreach (var eventsTableColumn in insertedColumns)
                         {
-                            parameterDictionary[$"@{eventsTableColumn.ColumnName}_{i}"] = Convert.ChangeType(eventsTableRow[eventsTableColumn.ColumnName], eventsTableColumn.DataType);
+                            Object columnVal = null;
+
+                            //Don't blow up if row not present for current column value
+                            if (eventsTableRow.ContainsKey(eventsTableColumn.ColumnName))
+                            {
+                                columnVal = Convert.ChangeType(eventsTableRow[eventsTableColumn.ColumnName], eventsTableColumn.DataType);
+                            }
+
+                            parameterDictionary[$"@{eventsTableColumn.ColumnName}_{i}"] = columnVal;
                         }
                         i++;
                     }

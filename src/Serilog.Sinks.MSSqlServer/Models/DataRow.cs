@@ -1,6 +1,7 @@
 ﻿#if NETCORE
 namespace Serilog.Models
 {
+    using System;
     using System.Collections.Generic;
 
     /// <summary>
@@ -8,6 +9,12 @@ namespace Serilog.Models
     /// </summary>
     public class DataRow : Dictionary<string, object>
     {
+        /// <summary>
+        /// Constructs a case insensitive DataRow.
+        /// </summary>
+        public DataRow() : base(StringComparer.OrdinalIgnoreCase)
+        {
+        }
         /// <summary>
         /// Accessor for the DataTable of this row.
         /// </summary>
