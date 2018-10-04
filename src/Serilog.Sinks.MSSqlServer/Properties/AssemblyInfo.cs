@@ -2,7 +2,7 @@
 using System.Runtime.CompilerServices;
 
 [assembly: AssemblyTitle("Serilog.Sinks.MSSqlServerCore")]
-[assembly: AssemblyDescription("Serilog sink for MSSqlServer and .NET Core")]
+[assembly: AssemblyDescription("##DEPRECATED##\r\nPlease use official Serilog sink for MSSqlServer as it now fully supports .NET Standard")]
 [assembly: AssemblyCopyright("Copyright © Serilog Contributors 2014")]
 
 [assembly: InternalsVisibleTo("Serilog.Tests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100fb8d13fd344a1c" +
